@@ -1,10 +1,15 @@
 {
   "name": "map-parser",
   "version": "0.0.1",
-  "description": "",
+  "description": "Trying to make sense of cartographic programs, automatically.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Florian Ledermann <florian.ledermann@tuwien.ac.at>"
+  "author": "Florian Ledermann <florian.ledermann@tuwien.ac.at>",
+  "dependencies": {
+    "escope": "3.6.0",
+    "esprima": "3.1.2",
+    "estraverse": "4.2.0"
+  }
 }
