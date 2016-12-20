@@ -1,6 +1,6 @@
 var a = 0;
 var b = 1;
-var c = 2;
+const c = 2;
 
 b = b+1;
 
