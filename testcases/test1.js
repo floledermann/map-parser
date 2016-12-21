@@ -6,4 +6,6 @@ b = b+1;
 
 z = b+c;
 
+z = z + c;
+
 console.log(z);
