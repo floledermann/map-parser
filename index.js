@@ -15,6 +15,9 @@ fs.readFile(FILENAME, 'utf8', (err, data) => {
 // https://github.com/estree/estree/blob/master/es5.md
 // http://esprima.org/demo/parse.html
 
+// EScope reference:
+// http://estools.github.io/escope/Scope.html 
+
 function analyze(program) {
     
     var identifiers = [];
