@@ -2,9 +2,9 @@ const fs = require('fs');
 
 const esprima = require('esprima');
 const estraverse = require('estraverse');
+const escope = require('escope');
 
-
-var FILENAME = 'testcases/test1.js';
+const FILENAME = 'testcases/test1.js';
 
 fs.readFile(FILENAME, 'utf8', (err, data) => {
     if (err) throw err;
@@ -20,7 +20,7 @@ function analyze(program) {
     var identifiers = [];
     var dependencies = new Map();
     
-    var parsed = esprima.parse(program, {
+    var ast = esprima.parse(program, {
         loc: true,
         range: true,
         //tokens: true,
@@ -29,8 +29,19 @@ function analyze(program) {
         //attachComment: true 
     });
     
-    estraverse.traverse(parsed, {
+    const scopeManager = escope.analyze(ast);
+    // global scope
+    var currentScope = scopeManager.acquire(ast);
+    
+    // TODO: warn if "with" or "eval()" is found (scope analysis may not work accurately)
+    // http://estools.github.io/escope/Scope.html
+    
+    estraverse.traverse(ast, {
         enter: (node, parent) => {
+            if (/Function/.test(node.type)) {
+                // update scope
+                currentScope = scopeManager.acquire(node);
+            }
         },
         leave: (node, parent) => {
             if (node.type == 'VariableDeclaration') {
@@ -49,20 +60,33 @@ function analyze(program) {
                     let entry = dependencies.get(name);
                     let deps = extractDependencies(node.right);
                     for (let dep of deps) {
-                        if (dep != name) entry.add(dep);
+                        let scoped = getScopeID(currentScope) + dep;
+                        if (dep != name) entry.add(scoped);
                     }
                 }
                     
                 
             }
+            if (/Function/.test(node.type)) {
+                // set to parent scope
+                currentScope = currentScope.upper;  
+            }
         }
     });
-    //console.log(JSON.stringify(parsed,null,2));
+    //console.log(JSON.stringify(ast,null,2));
     console.log(underline("\nIdentifiers"));
     console.log(identifiers.join('\n'));
     console.log(underline("\nDependencies"));
     for (let [name, value] of dependencies) console.log(name + ": " + [...value].join(","));
 
+}
+
+function getScopeID(scope) {
+    // global scope
+    if (!scope.upper) return "";
+    
+    var upper = getScopeID(scope.upper);
+    return upper + "<" + scope.type + ">" + scope.block.name + ":";
 }
 
 function extractDependencies(expr) {

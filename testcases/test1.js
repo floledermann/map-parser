@@ -4,8 +4,18 @@ const c = 2;
 
 b = b+1;
 
-z = b+c;
+var z = a;
 
-z = z + c;
+function pure(a,b) {
+    return a + b;
+}
+
+function leaking(a) {
+    z = z + a;
+}
+
+
+pure(z,b);
+leaking(c);
 
 console.log(z);
