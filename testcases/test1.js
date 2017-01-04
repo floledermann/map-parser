@@ -15,7 +15,7 @@ function leaking(a) {
 }
 
 
-pure(z,b);
+z = pure(z,b);
 leaking(c);
 
 console.log(z);
