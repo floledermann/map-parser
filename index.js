@@ -4,7 +4,7 @@ const esprima = require('esprima');
 const estraverse = require('estraverse');
 const escope = require('escope');
 
-const FILENAME = 'testcases/test1.js';
+const FILENAME = 'testcases/test2.js';
 
 fs.readFile(FILENAME, 'utf8', (err, data) => {
     if (err) throw err;
@@ -50,6 +50,20 @@ function analyze(program) {
                 // update scope
                 currentScope = scopeManager.acquire(node);
             }
+            
+            // if (node.callee) {                
+                // console.log(node.callee);
+            // }
+            if (node.callee && node.callee.property && node.callee.property.type == 'Identifier' && node.callee.property.name == 'createElement') {             
+                var scope = currentScope;
+                var scopeStr = "unknown scope";
+                while (!(scope.type == 'function' || scope.type == 'global') && scope.upper) {
+                    scope = scope.upper;
+                }
+                scopeStr = scope.type + " scope";
+                if (scope.thisFound) scopeStr += " (this)";
+                console.log("createElement found in " + scopeStr + " on line " + node.loc.start.line);
+            }
         },
         leave: (node, parent) => {
             if (node.type == 'VariableDeclaration') {
@@ -58,7 +72,7 @@ function analyze(program) {
             if (node.type == 'AssignmentExpression') {
                 //console.log(node.left.type);
                 if (node.left.type != 'Identifier') {
-                    console.log("Warning: left side too complex: " + node);
+                    //console.log("Warning: left side too complex: " + node);
                 }
                 else {
                     let name = node.left.name;
@@ -82,11 +96,30 @@ function analyze(program) {
         }
     });
     //console.log(JSON.stringify(ast,null,2));
-    console.log(underline("\nIdentifiers"));
-    console.log(identifiers.join('\n'));
-    console.log(underline("\nDependencies"));
-    for (let [name, value] of dependencies) console.log(name + ": " + [...value].join(","));
+    //console.log(underline("\nIdentifiers"));
+    //console.log(identifiers.join('\n'));
+    //console.log(underline("\nDependencies"));
+    //for (let [name, value] of dependencies) console.log(name + ": " + [...value].join(","));
 
+    console.log("");
+
+    var scope = scopeManager.acquire(ast);
+    
+    function traverseScope(scope) {
+        console.log(scope.type + ":" + scope.block.loc.start.line);
+        if (scope.block.id && scope.block.id.name) console.log(scope.block.id.name);
+        //console.log("taints: " + [...scope.taints.keys()]);
+        // arguments is always tainted, so take care about references to arguments!
+        console.log("'this' found: " + scope.thisFound);
+        console.log("variables: " + [...scope.variables].map(v => v.name));
+        console.log("references: " + [...scope.references].map(r => r.identifier.name + "(" + (r.resolved ? r.resolved.scope.block.loc.start.line : "?") + ")"));
+        console.log("");
+        for (s of scope.childScopes) {
+            traverseScope(s);
+        }      
+    }
+    
+    traverseScope(scope);
 }
 
 function getScopeID(scope) {
