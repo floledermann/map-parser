@@ -23,14 +23,19 @@ function analyze(program) {
     var identifiers = [];
     var dependencies = new Map();
     
-    var ast = esprima.parse(program, {
-        loc: true,
-        range: true,
-        //tokens: true,
-        comment: true,
-        tolerant: true,
-        //attachComment: true 
-    });
+    try {
+        var ast = esprima.parse(program, {
+            loc: true,
+            range: true,
+            //tokens: true,
+            comment: true,
+            tolerant: true
+            //attachComment: true 
+        });
+    } catch (e) {
+        console.log("Parsing Error in " + FILENAME + ": " + e.message);
+        process.exit();
+    }
     
     const scopeManager = escope.analyze(ast);
     // global scope
