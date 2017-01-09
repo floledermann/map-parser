@@ -5,6 +5,7 @@ const estraverse = require('estraverse');
 const escope = require('escope');
 
 const FILENAME = 'testcases/test3.js';
+//const FILENAME = 'testcases/letsmakeamap-concatenated.js';
 
 fs.readFile(FILENAME, 'utf8', (err, data) => {
     if (err) throw err;
@@ -51,12 +52,24 @@ function analyze(program) {
         return parentChain.slice(-num-1,end)[0];
     }
     
+    var _ = underline;
+    
+    console.log(_("GLOBAL SCOPE"));
+    outputScope(currentScope);
+    
+    // TODO:
+    // - dependency chain, possible global object references
+    // - call graph
+    // 
+    
     estraverse.traverse(ast, {
         enter: (node, parent) => {
             parentChain.push(node);
             if (/Function/.test(node.type)) {
                 // update scope
                 currentScope = scopeManager.acquire(node);
+                console.log(_("SCOPE"));
+                outputScope(currentScope);
             }
             
             // if (node.callee) {                
@@ -114,9 +127,9 @@ function analyze(program) {
 
     var scope = scopeManager.acquire(ast);
     
-    function traverseScope(scope) {
-        console.log(scope.type + ":" + scope.block.loc.start.line);
+    function outputScope(scope) {
         if (scope.block.id && scope.block.id.name) console.log(scope.block.id.name);
+        console.log(scope.type + ":" + scope.block.loc.start.line);
         //console.log("taints: " + [...scope.taints.keys()]);
         // arguments is always tainted, so take care about references to arguments!
         console.log("'this' found: " + scope.thisFound);
@@ -125,12 +138,16 @@ function analyze(program) {
         console.log("global references: " + refs.filter(r => !r.resolved).map(r => r.identifier.name));
         console.log("local references: " + refs.filter(r => r.resolved).map(r => r.identifier.name + "(" + r.resolved.scope.block.loc.start.line + ")"));
         console.log("");
+    }
+    
+    function traverseScope(scope) {
+        outputScope(scope);
         for (s of scope.childScopes) {
             traverseScope(s);
         }      
     }
     
-    traverseScope(scope);
+    //traverseScope(scope);
 }
 
 function getScopeID(scope) {
