@@ -9,7 +9,11 @@ function f1() {
     var global2 = window.document;
     var global3 = document;
 };
-foo();
+f1();
+
+// global function reassigned
+var f1_ = f1;
+f1_();
 
 // anonymous invocation
 !function() {
