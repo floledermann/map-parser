@@ -4,7 +4,7 @@ const esprima = require('esprima');
 const estraverse = require('estraverse');
 const escope = require('escope');
 
-const FILENAME = 'testcases/test2.js';
+const FILENAME = 'testcases/test3.js';
 
 fs.readFile(FILENAME, 'utf8', (err, data) => {
     if (err) throw err;
@@ -44,8 +44,16 @@ function analyze(program) {
     // TODO: warn if "with" or "eval()" is found (scope analysis may not work accurately)
     // http://estools.github.io/escope/Scope.html
     
+    let parentChain = [];
+    function getAncestor(num) {
+        // gets nth ancestor from the parent chain
+        var end = (num > 0) ? -num : undefined;
+        return parentChain.slice(-num-1,end)[0];
+    }
+    
     estraverse.traverse(ast, {
         enter: (node, parent) => {
+            parentChain.push(node);
             if (/Function/.test(node.type)) {
                 // update scope
                 currentScope = scopeManager.acquire(node);
@@ -66,6 +74,7 @@ function analyze(program) {
             }
         },
         leave: (node, parent) => {
+            parentChain.pop();
             if (node.type == 'VariableDeclaration') {
                 node.declarations.forEach(d=>identifiers.push(node.kind + " " + d.id.name));
             }
@@ -112,7 +121,9 @@ function analyze(program) {
         // arguments is always tainted, so take care about references to arguments!
         console.log("'this' found: " + scope.thisFound);
         console.log("variables: " + [...scope.variables].map(v => v.name));
-        console.log("references: " + [...scope.references].map(r => r.identifier.name + "(" + (r.resolved ? r.resolved.scope.block.loc.start.line : "?") + ")"));
+        var refs = [...scope.references];
+        console.log("global references: " + refs.filter(r => !r.resolved).map(r => r.identifier.name));
+        console.log("local references: " + refs.filter(r => r.resolved).map(r => r.identifier.name + "(" + r.resolved.scope.block.loc.start.line + ")"));
         console.log("");
         for (s of scope.childScopes) {
             traverseScope(s);
