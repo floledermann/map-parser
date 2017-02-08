@@ -7,6 +7,10 @@ const escope = require('escope');
 const FILENAME = 'testcases/test3.js';
 //const FILENAME = 'testcases/letsmakeamap-concatenated.js';
 
+// possibly related:
+// ES5 tests: https://github.com/tc39/test262/tree/es5-tests
+// ES6 tests: https://github.com/tc39/test262/
+
 fs.readFile(FILENAME, 'utf8', (err, data) => {
     if (err) throw err;
     analyze(data);
@@ -61,6 +65,9 @@ function analyze(program) {
     // - dependency chain, possible global object references
     // - call graph
     // 
+    
+    // IDEA:
+    // always treat "this" as global object, will give false positive only for matching mathod names on objects!?
     
     estraverse.traverse(ast, {
         enter: (node, parent) => {
